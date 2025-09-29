@@ -1,45 +1,40 @@
 import logging
 import logging.config
-from datetime import datetime, timedelta, date
+from datetime import datetime, date
 import os
 import sys
+import asyncio
+import pytz
 
-# Get logging configurations
-logging.config.fileConfig('logging.conf')
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
-logging.getLogger("imdbpy").setLevel(logging.ERROR)
-
-# for prevent stoping the bot after 1 week
-logging.getLogger("asyncio").setLevel(logging.CRITICAL -1)
 import tgcrypto
 from pyrogram import Client, __version__
 from pyrogram.raw.all import layer
+from pyrogram import utils as pyroutils
+from aiohttp import web as webserver
+
 from database.ia_filterdb import Media
 from database.users_chats_db import db
 from info import SESSION, API_ID, API_HASH, BOT_TOKEN, LOG_STR, LOG_CHANNEL
 from utils import temp
+from Script import script
+from plugins.webcode import bot_run
 from typing import Union, Optional, AsyncGenerator
 from pyrogram import types
-from Script import script
-import asyncio
-import pytz
 
-# peer id invaild fixxx
-from pyrogram import utils as pyroutils
+# Logging setup
+logging.config.fileConfig('logging.conf')
+logging.getLogger().setLevel(logging.INFO)
+logging.getLogger("pyrogram").setLevel(logging.ERROR)
+logging.getLogger("imdbpy").setLevel(logging.ERROR)
+logging.getLogger("asyncio").setLevel(logging.CRITICAL - 1)
+
+# Fix peer id invalid errors
 pyroutils.MIN_CHAT_ID = -999999999999
 pyroutils.MIN_CHANNEL_ID = -100999999999999
 
-from plugins.webcode import bot_run
-from os import environ
-from aiohttp import web as webserver
+PORT_CODE = int(os.environ.get("PORT", "8080"))  # Replit default port
 
-PORT_CODE = environ.get("PORT", "8080")
-
-
-
-
-
+# -------------------- Bot Class --------------------
 class Bot(Client):
 
     def __init__(self):
@@ -54,9 +49,11 @@ class Bot(Client):
         )
 
     async def start(self):
+        # Load banned users & chats
         b_users, b_chats = await db.get_banned()
         temp.BANNED_USERS = b_users
         temp.BANNED_CHATS = b_chats
+
         await super().start()
         await Media.ensure_indexes()
         me = await self.get_me()
@@ -64,22 +61,26 @@ class Bot(Client):
         temp.U_NAME = me.username
         temp.B_NAME = me.first_name
         self.username = '@' + me.username
-        logging.info(f"{me.first_name} with for Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
-        logging.info(LOG_STR)
-        await self.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT)#RESTART SND IN LOG_CHANNEL
-        print("Safin own Bot</>")
 
+        logging.info(f"{me.first_name} with Pyrogram v{__version__} (Layer {layer}) started on {me.username}.")
+        logging.info(LOG_STR)
+
+        # Send restart message to log channel
+        await self.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_TXT)
         tz = pytz.timezone('Asia/Kolkata')
         today = date.today()
         now = datetime.now(tz)
         time = now.strftime("%H:%M:%S %p")
         await self.send_message(chat_id=LOG_CHANNEL, text=script.RESTART_GC_TXT.format(today, time))
-        client = webserver.AppRunner(await bot_run())
-        await client.setup()
-        bind_address = "0.0.0.0"
-        await webserver.TCPSite(client, bind_address,
-        PORT_CODE).start()
-        
+        print("Safin's Bot is online ✅")
+
+        # Start Flask-like server for UptimeRobot
+        app_runner = webserver.AppRunner(await bot_run())
+        await app_runner.setup()
+        site = webserver.TCPSite(app_runner, "0.0.0.0", PORT_CODE)
+        await site.start()
+        logging.info(f"Web server running on port {PORT_CODE}")
+
         # Schedule auto-restart every 24 hours
         asyncio.create_task(self.schedule_restart())
 
@@ -87,59 +88,34 @@ class Bot(Client):
         await super().stop()
         logging.info("Bot stopped. Bye.")
 
-    # 24 hrs restart fn()
+    # 24-hour auto-restart
     async def restart(self):
         logging.info("Restarting bot process...")
         await self.stop()
         os.execl(sys.executable, sys.executable, *sys.argv)
 
     async def schedule_restart(self, hours: int = 24):
-        await asyncio.sleep(hours * 60 * 60)  # Wait for 24 hours
-        await self.send_message(chat_id=LOG_CHANNEL, text="Auto Restarting the KuttuBot \n(24 hrs ⏰️ refresh)...")
+        await asyncio.sleep(hours * 60 * 60)
+        await self.send_message(chat_id=LOG_CHANNEL, text="Auto Restarting the Bot \n(24 hrs ⏰️ refresh)...")
         await self.restart()
-#restarting fn() end;
-    
+
+    # Iterator helper function (unchanged)
     async def iter_messages(
         self,
         chat_id: Union[int, str],
         limit: int,
         offset: int = 0,
     ) -> Optional[AsyncGenerator["types.Message", None]]:
-        """Iterate through a chat sequentially.
-        This convenience method does the same as repeatedly calling :meth:`~pyrogram.Client.get_messages` in a loop, thus saving
-        you from the hassle of setting up boilerplate code. It is useful for getting the whole chat messages with a
-        single call.
-        Parameters:
-            chat_id (``int`` | ``str``):
-                Unique identifier (int) or username (str) of the target chat.
-                For your personal cloud (Saved Messages) you can simply use "me" or "self".
-                For a contact that exists in your Telegram address book you can use his phone number (str).
-                
-            limit (``int``):
-                Identifier of the last message to be returned.
-                
-            offset (``int``, *optional*):
-                Identifier of the first message to be returned.
-                Defaults to 0.
-        Returns:
-            ``Generator``: A generator yielding :obj:`~pyrogram.types.Message` objects.
-        Example:
-            .. code-block:: python
-                for message in app.iter_messages("pyrogram", 1, 15000):
-                    print(message.text)
-        """
         current = offset
         while True:
             new_diff = min(200, limit - current)
             if new_diff <= 0:
                 return
-            messages = await self.get_messages(chat_id, list(range(current, current+new_diff+1)))
+            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1)))
             for message in messages:
                 yield message
                 current += 1
 
-
+# -------------------- Run Bot --------------------
 app = Bot()
 app.run()
-
-
