@@ -27,7 +27,7 @@ BOT_TOKEN = environ.get('BOT_TOKEN', '8420823401:AAF5SEgM6vwB5swBQRbUjfdlmU6RU8n
 BOT_START_TIME = time()
 CACHE_TIME = int(environ.get('CACHE_TIME', 300))
 USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', False))
-PICS = (environ.get('PICS', 'https://telegra.ph/file/8619a6f258621134b7576.jpg https://telegra.ph/file/d8daf35960bbb4a7f8558.jpg')).split()
+PICS = (environ.get('PICS', 'https://telegra.ph/file/8619a6f258621134b7576.jpg')).split()
 
 # -------------------- Admins, Channels & Users --------------------
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '21116415').split()]
@@ -35,8 +35,8 @@ CHANNELS = [int(ch) if id_pattern.search(ch) else ch for ch in environ.get('CHAN
 auth_users = [int(user) if id_pattern.search(user) else user for user in environ.get('AUTH_USERS', '21116415').split()]
 AUTH_USERS = auth_users + ADMINS if auth_users else ADMINS
 
-auth_channel = environ.get('AUTH_CHANNEL', '')
-auth_grp = environ.get('AUTH_GROUP', '')
+auth_channel = environ.get('AUTH_CHANNEL', '-1002584950282')
+auth_grp = environ.get('AUTH_GROUP', '-1002584950282')
 AUTH_CHANNEL = [int(ch) for ch in auth_channel.split() if id_pattern.search(ch)]
 AUTH_GROUPS = [int(ch) for ch in auth_grp.split() if id_pattern.search(ch)] if auth_grp else []
 
@@ -56,7 +56,7 @@ IMDB = is_enabled(environ.get('IMDB', 'False'), True)
 SINGLE_BUTTON = is_enabled(environ.get('SINGLE_BUTTON', 'True'))
 CUSTOM_FILE_CAPTION = environ.get("CUSTOM_FILE_CAPTION", f"{script.CUSTOM_FILE_CAPTION}")
 BATCH_FILE_CAPTION = environ.get("BATCH_FILE_CAPTION",
-                                 "📂 <em>File Name</em>: <code>{file_name}</code>\n\n ♻ <em>File Size</em>:{file_size} \n\n <b><i>Latest Movies -</i> [ELDORADO](https://t.me/+pRaLXcOcEW83OWY1) </b>")
+                                 "📂 <em>File Name</em>: <code>{file_name}</code>\n\n ♻ <em>File Size</em>:{file_size} \n\n <b><i>Latest Movies -</i> [ELDORADO](https://t.me/moviestoreupdates) </b>")
 IMDB_TEMPLATE = environ.get("IMDB_TEMPLATE",
                             "🏷 𝖳𝗂𝗍𝗅𝖾: <a href={url}>{title}</a> \n🔮 𝖸𝖾𝖺𝗋: {year} \n⭐️ 𝖱𝖺𝗍𝗂𝗇𝗀𝗌: {rating}/10 \n🎭 𝖦𝖾𝗇𝖾𝗋𝗌: {genres} \n\n🎊 𝖯𝗈𝗐𝖾𝗋𝖾𝖽 𝖡𝗒 [Sfn Bot](https://t.me/sfnmoviesbot)")
 LONG_IMDB_DESCRIPTION = is_enabled(environ.get("LONG_IMDB_DESCRIPTION", "False"))
@@ -81,3 +81,4 @@ Current Bot Configuration:
 - MAX_LIST_ELM: {MAX_LIST_ELM if MAX_LIST_ELM else "Full list"}
 - IMDB_TEMPLATE: {IMDB_TEMPLATE}
 """
+
