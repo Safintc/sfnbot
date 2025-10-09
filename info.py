@@ -27,7 +27,7 @@ BOT_TOKEN = environ.get('BOT_TOKEN', '8420823401:AAF5SEgM6vwB5swBQRbUjfdlmU6RU8n
 BOT_START_TIME = time()
 CACHE_TIME = int(environ.get('CACHE_TIME', 300))
 USE_CAPTION_FILTER = is_enabled(environ.get('USE_CAPTION_FILTER', False))
-PICS = (environ.get('PICS', 'https://telegra.ph/file/8619a6f258621134b7576.jpg')).split()
+PICS = (environ.get('PICS', 'https://ibb.co/0jvxD3Tj')).split()
 
 # -------------------- Admins, Channels & Users --------------------
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '21116415').split()]
@@ -81,4 +81,5 @@ Current Bot Configuration:
 - MAX_LIST_ELM: {MAX_LIST_ELM if MAX_LIST_ELM else "Full list"}
 - IMDB_TEMPLATE: {IMDB_TEMPLATE}
 """
+
 
